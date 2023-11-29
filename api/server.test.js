@@ -46,7 +46,7 @@ describe('[POST] /api/auth/register', () =>{
   it('return 409 if username exists in db', async () => {
     const existingUser = {username: 'testUser', password: 'testPass'}
 
-    const response1 = await request(server)
+    const response1 = await request(server) 
     .post('/api/auth/register')
     .send(existingUser)
 
@@ -57,5 +57,41 @@ describe('[POST] /api/auth/register', () =>{
 
     expect(response2.status).toBe(409)
     expect(response2.body).toHaveProperty('message', 'username taken')
+  })
+})
+
+describe('[POST] /api/auth/login', () => {
+  it('logs in an existing user', async () => {
+    const existingUser = {username: 'testUser', password: 'testPass'}
+
+    await request(server)
+    .post('/api/auth/register')
+    .send(existingUser);
+
+    const response = await request(server)
+    .post('/api/auth/login')
+    .send(existingUser)
+
+    expect(response.status).toBe(200)
+    expect(response.body).toHaveProperty('message', `Welcome, ${existingUser.username}`)
+    expect(response.body).toHaveProperty('token')
+  })
+  it('returns 400 if username or password are missing', async () => {
+    const response = await request(server)
+    .post('/api/auth/login')
+    .send({})
+
+    expect(response.status).toBe(400)
+    expect(response.body).toHaveProperty('message', 'username and password required')
+  })
+
+  it('returns status of 401 if username or password are incorrect', async () => {
+    const nonExistingUser = {username: 'nonExistingUser', password: 'testPass'}
+    const response = await request(server)
+    .post('/api/auth/login')
+    .send(nonExistingUser)
+
+    expect(response.status).toBe(401)
+    expect(response.body).toHaveProperty('message', 'invalid credentials')
   })
 })
